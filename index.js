@@ -1,136 +1,245 @@
-const express = require('express'),
-  morgan = require('morgan'),
-  fs = require('fs'),
-  path = require('path');
+const express = require("express");
 const app = express();
+const bodyParser = require("body-parser");
+uuid = require("uuid");
+const morgan = require ("morgan");
+const mongoose = require("mongoose");
+const Models = require("./models");
 
-let movies = [
-  {
-  'id': '1',
-  'title': 'The Godfather',
-  'director': 'Francis Ford Coppola',
-  'releaseYear': '1972',
-  'genre': 'drama',
-  'phase': '1'
-}, 
-{
-  'id': '2',
-  'title': 'The Godfather Part II',
-  'director': 'Francis Ford Coppola',
-  'releaseYear': '1974',
-  'genre': 'drama',
-  'phase': '1'
-}, 
-{
-  'id': '3',
-  'title': 'Shawshank Redemption',
-  'director': 'Frank Darabont',
-  'releaseYear': '1994',
-  'genre': 'drama',
-  'phase': '1'
-}, 
-{
-  'id': '4',
-  'title': 'Dark Knight',
-  'director': 'Christopher Nolan',
-  'releaseYear': '2008',
-  'genre': 'action',
-  'phase': '1'
-}, 
-{
-  'id': '5',
-  'title': '12 Angry Men',
-  'director': 'Sidney Lumet',
-  'releaseYear': '1957',
-  'genre': 'action',
-  'phase': '1'
-}, 
-{
-  'id': '6',
-  'title': 'Pulp Fiction',
-  'director': 'Quentin Tarantino',
-  'releaseYear': '1994',
-  'genre': 'action',
-  'phase': '1'
-}, 
-{
-  'id': '7',
-  'title': 'The Lord of the Rings: The Fellowship of the Ring',
-  'director': 'Peter Jackson',
-  'releaseYear': '2001',
-  'genre': 'Fantasy',
-  'phase': '2'
-}, 
-{
-  'id': '8',
-  'title': 'The Lord of the Rings: The Return of the King',
-  'director': 'Peter Jackson',
-  'releaseYear': '2003',
-  'genre': 'Fantasy',
-  'phase': '2'
-}, 
-]
+const Movies = Models.Movie;
+const Users = Models.User;
+const Genres = Models.Genre;
+const Directors = Models.Director;
 
-const log = fs.createWriteStream(path.join(__dirname, 'log.txt'), {
-  flags: 'a',
+mongoose.connect("mongodb://localhost:27017/moviedb", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+// Middleware 
+
+app.use(bodyParser.urlencoded({
+  extended: true
+}));
+app.use(bodyParser.json());
+
+//CREATE: Add a user
+
+app.post("/user", async (req, res) => {
+  await User.findOne({
+      Username: req.body.Username
+    })
+    .then((user) => {
+      if (user) {
+        return res.status(400).send(req.body.Username + "already exists");
+      } else {
+        User.create({
+            Username: req.body.Username,
+            Password: req.body.Password,
+            Email: req.body.Email,
+            Birthday: req.body.Birthday,
+          })
+          .then((Users) => {
+            res.status(201).json(user);
+          })
+          .catch((error) => {
+            console.error(error);
+            res.status(500).send("Error: " + error);
+          });
+      }
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).send("Error: " + error);
+    });
 });
 
-app.listen(8080, () => {
-  console.log('Server listening on port 8080.');
-  app.get('/movies', (req, res) => {
-    res.json(movies);
-    res.status(200).send('Movies array');
-  });
-  
-  app.get('/movies/:title', (req, res) => {
-    res.json(movies.find((movie) => {
-      return movie.title === req.params.title;
-    }));
-  });
- 
-  app.get('/movies/id/:id', (req, res) => {
-    res.json(movies.filter((movie) => {
-      return movie.id === req.params.id;
-    }));
-  });
-  
-  app.get('/movies/genres/:genre', (req, res) => {
-    res.json(movies.filter((movie) => {
-      return movie.genre === req.params.genre;
-    }));
-  });
-  
-  app.get('/movies/releaseYear/:releaseYear', (req, res) => {
-    res.json(movies.filter((movie) => {
-      return movie.releaseYear === req.params.releaseYear;
-    }));
-  });
-  
-  app.get('/movies/phases/:phase', (req, res) => {
-    res.json(movies.filter((movie) => {
-      return movie.phase === req.params.phase;
-    }));
-  });
- 
-  app.get('/movies/directors/:director', (req, res) => {
-    res.json(movies.filter((movie) => {
-      return movie.director === req.params.director;
-    }));
-  });
-  
-  app.use(morgan('combined', {
-    stream: log
-  }));
-  
-  app.use(express.static(path.join(__dirname, 'public')));
-  app.get("/documentation", (req, res) => {
-    res.sendFile("public/documentation.html", {
-      root: __dirname
+// Update: a user's info, by username
+
+app.put("/user/:Username", async (req, res) => {
+  await User.findOneAndUpdate({
+      Username: req.params.Username
+    }, {
+      $set: {
+        Username: req.body.Username,
+        Password: req.body.Password,
+        Email: req.body.Email,
+        Birthday: req.body.Birthday,
+      },
+    }, {
+      new: true
+    }) // ensures updated document is returned
+    .then((updatedUser) => {
+      res.json(updatedUser);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error: " + err);
     });
+});
+
+// Add a movie to a user's list of favorites
+
+app.post("/user/:Username/movie/:MovieID", async (req, res) => {
+  await User.findOneAndUpdate({
+      Username: req.params.Username
+    }, {
+      $push: {
+        FavoriteMovies: req.params.MovieID
+      },
+    }, {
+      new: true
+    }) // Ensures updated document is returned
+    .then((updatedUser) => {
+      res.json(updatedUser);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error: " + err);
+    });
+});
+
+//delete a movie from favorites
+
+app.delete("/user/:id/:movieTitle", (req, res) => {
+  const {
+    id,
+    movieTitle
+  } = req.params;
+
+  let user = user.find((usesr) => user.id == id);
+
+  if (user) {
+    user.favMovies = users.favMovies.filter((title) => title !== movieTitle);
+    res
+      .status(200)
+      .send(`${movieTitle} has been removed from user ${id}'s array`);
+  } else {
+    res.status(400).send("User not found");
+  }
+});
+
+//delete user
+
+app.delete("/user/:Username", (req, res) => {
+  Users.findOneAndRemove({
+      Username: req.params.userName
+    })
+    .then((user) => {
+      if (!user) {
+        res.status(400).send(req.params.userName + " was not found");
+      } else {
+        res.status(200).send(req.params.userName + " was deleted");
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error: " + err);
+    });
+});
+
+//READ
+
+app.get("/", (req, res) => {
+  res.send("Welcome to MyFlix");
+});
+
+// Get all users
+
+app.get("/user", async (req, res) => {
+  await User.find()
+    .then((user) => {
+      res.status(201).json(user);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error: " + err);
+    });
+});
+
+// Get a user by username
+
+app.get("/user/:Username", async (req, res) => {
+  await User.findOne({
+      Username: req.params.Username
+    })
+    .then((user) => {
+      res.json(user);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error: " + err);
+    });
+});
+
+//get movies
+
+app.get("/movie", async (req, res) => {
+  await Movies.find()
+    .then((movies) => {
+      res.status(201).json(movies);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error: " + err);
+    });
+});
+
+// get by title
+
+app.get("/movie/:Title", async (req, res) => {
+  await Movies.findOne({
+      Title: req.params.Title
+    })
+    .then((movie) => {
+      res.json(movie);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error: " + err);
+    });
+});
+
+//get genre
+
+app.get("/movie/genre/:genreName", async (req, res) => {
+  await Movies.findOne({
+      "Genre.Name": req.params.genreName
+    })
+    .then((movies) => {
+      res.json(movies);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error: " + err);
+    });
+});
+
+//get director
+
+app.get("/movie/director/:directorName", async (req, res) => {
+  await Movies.findOne({
+      "Director.Name": req.params.directorName
+    })
+    .then((movies) => {
+      res.json(movies);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error: " + err);
+    });
+});
+
+app.get("/documentation", (req, res) => {
+  res.sendFile("public/documentation.html", {
+    root: __dirname
   });
-  
-  app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).send('Server Error');
-  });
+});
+
+app.get("/secreturl", (req, res) => {
+  res.send("This is a secret URL with super top-secret content.");
+});
+
+// Listen for requests
+app.listen(8080, () => {
+  console.log("Your app is listening on port 8080.");
 });
