@@ -1,0 +1,63 @@
+body{
+    font-family: "Montserrat", sans-serif;
+}
+header{
+    display: block;
+    margin: 24px;
+    padding: 16px;
+}
+main{
+    display: block;
+    margin: 24px;
+    padding: 16px;
+}
+h1{
+    font-family: "Montserrat", sans-serif;
+    color: rgb(0, 0, 0);;
+}
+span{
+    font-family: "Montserrat", sans-serif;
+    font-weight: 600;
+    margin: 0 32px 0px 6px;
+}
+.endpoints-list{
+    color: 353535;
+    font-size: 15px;
+    margin: 8px;
+    padding: 16px;
+    border: 1px solid rgb(83, 77, 77);
+    border-radius: 4px;
+    background-color: rgb(218, 230, 255);
+}
+.get{
+    display: inline;
+    background-color: rgb(3, 132, 141);
+    color: white;
+    border-radius: 4px;
+    padding: 4px;
+  
+}
+.post{
+    display: inline;
+    background-color: rgb(187, 139, 16);
+    color: white;
+    border-radius: 4px;
+    padding: 4px;
+  
+}
+.put{
+    display: inline;
+    background-color: rgb(31, 41, 115);
+    color: white;
+    border-radius: 4px;
+    padding: 4px;
+  
+}
+.delete{
+    display: inline;
+    background-color: rgb(235, 112, 84);
+    color: white;
+    border-radius: 4px;
+    padding: 4px;
+  
+}
