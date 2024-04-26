@@ -1,10 +1,11 @@
 const express = require("express");
-const app = express();
 const bodyParser = require("body-parser");
 uuid = require("uuid");
 const morgan = require("morgan");
 const mongoose = require("mongoose");
 const Models = require("./models");
+
+const { check, validationResult } = require('express-validator');
 
 const Movies = Models.Movie;
 const Users = Models.User;
@@ -13,6 +14,13 @@ mongoose.connect("mongodb://localhost:27017/moviedb", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
+
+const app = express();
+
+app.use(express.json());
+app.use(express.urlencoded({
+  extended: true
+}));
 // Middleware 
 
 app.use(bodyParser.urlencoded({
@@ -20,11 +28,44 @@ app.use(bodyParser.urlencoded({
 }));
 app.use(bodyParser.json());
 
+const cors = require('cors');
+app.use(cors());
+
 let auth = require('./auth')(app);
 const passport = require('passport');
 require('./passport');
 
-app.post("/users", async (req, res) => {
+const {
+  check,
+  validationResult
+} = require('express-validator');
+// CREATE: Handle POST request to add/Create a new user
+
+/* We'll expect JSON in this format
+{
+    ID: Integer,
+    Username: String,
+    Password: String,
+    Email: String,
+    Birthday: Date
+} */
+app.post("/users", [
+  check('Username', 'Username is required').isLength({
+    min: 7
+  }),
+  check('Username', 'Username contains non alphanumeric characters - not allowed.').isAlphanumeric(),
+  check('Password', 'Password is required').notEmpty(),
+  check('Email', 'Email does not appear to be valid').isEmail()
+], async (req, res) => {
+
+  //check validation object for errors
+  let errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(422).json({
+      errors: errors.array()
+    });
+  }
+  let hashPassword = Users.hashPassword(req.body.Password);
   await Users.findOne({
       Username: req.body.Username
     })
@@ -52,42 +93,73 @@ app.post("/users", async (req, res) => {
       res.status(500).send("Error: " + error);
     });
 });
+//UPDATE: Handle PUT request to update user information
+/* We'll expect JSON in this format
+{
+  Username: String,
+  (required)
+  Password: String,
+  (required)
+  Email: String,
+  (required)
+  Birthday: Date,
+  FavoriteMovies: []
+}
+*/
 
-// Update: a user's info, by username
+app.put('/users/:Username', [
+    //input validation
+    check('Username', 'Username is required').isLength({
+      min: 7
+    }),
+    check('Username', 'Username contains non alphanumeric characters - not allowed.').isAlphanumeric(),
+    check('Password', 'Password is required').notEmpty(),
+    check('Email', 'Email does not appear to be valid').isEmail()
+  ],
+  passport.authenticate('jwt', {
+    session: false
+  }), async (req, res) => {
 
-app.put('/users/:Username', passport.authenticate('jwt', {
-  session: false
-}), async (req, res) => {
-  // CONDITION TO CHECK ADDED HERE
-  if (req.user.Username !== req.params.Username) {
-    return res.status(400).send('Permission denied');
-  }
-  // CONDITION ENDS
-  await Users.findOneAndUpdate({
-      Username: req.params.Username
-    }, {
-      $set: {
-        Username: req.body.Username,
-        Password: req.body.Password,
-        Email: req.body.Email,
-        Birthday: req.body.Birthday
-      }
-    }, {
-      new: true
-    }) // This line makes sure that the updated document is returned
-    .then((updatedUser) => {
-      res.json(updatedUser);
-    })
-    .catch((err) => {
-      console.error(err);
-      res.status(500).send(`Error: ` + err);
-    })
+    //check validation object for errors
+    let errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(422).json({
+        errors: errors.array()
+      });
+    }
 
-});
+    // condition to check username matches username in request params
+    if (req.user.Username !== req.params.Username) {
+      return res.status(400).send('Permission denied');
+    }
+    // condition ends, find user and update info
+    await Users.findOneAndUpdate({
+        Username: req.params.Username
+      }, {
+        $set: {
+          Username: req.body.Username,
+          Password: req.body.Password,
+          Email: req.body.Email,
+          Birthday: req.body.Birthday
+        }
+      }, {
+        new: true
+      }) // This line makes sure that the updated document is returned
+      .then((updatedUser) => {
+        res.json(updatedUser);
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).send(`Error: ` + err);
+      })
+
+  });
 
 // Add a movie to a user's list of favorites
 
-app.post("/users/:Username/movies/:MovieID", async (req, res) => {
+app.post("/users/:Username/movies/:MovieID", passport.authenticate('jwt', {
+  session: false
+}), async (req, res) => {
   await Users.findOneAndUpdate({
       Username: req.params.Username
     }, {
@@ -263,6 +335,7 @@ app.get("/secreturl", (req, res) => {
 });
 
 // Listen for requests
-app.listen(8080, () => {
-  console.log("Your app is listening on port 8080.");
+const port = process.env.PORT || 8080;
+app.listen(port, '0.0.0.0',() => {
+ console.log('Listening on Port ' + port);
 });
