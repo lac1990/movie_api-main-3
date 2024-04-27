@@ -10,7 +10,7 @@ const { check, validationResult } = require('express-validator');
 const Movies = Models.Movie;
 const Users = Models.User;
 
-mongoose.connect("mongodb://localhost:27017/moviedb", {
+mongoose.connect("mongoimport --uri mongodb+srv://laciereddick14:Scarlet14@moviedb.dcdfl.mongodb.net/mymoviedb --collection movies --type json --file ../exported_collections/movies.json", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
