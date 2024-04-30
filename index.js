@@ -10,11 +10,10 @@ const { check, validationResult } = require('express-validator');
 const Movies = Models.Movie;
 const Users = Models.User;
 
-mongoose.connect("mongoimport --uri mongodb+srv://laciereddick14:Scarlet14@moviedb.dcdfl.mongodb.net/mymoviedb --collection movies --type json --file ../exported_collections/movies.json", {
+mongoose.connect("mongodb+srv://laciereddick14:ArkilDE3f8Ozkm3R@cluster0.75vcdly.mongodb.net/?retryWrites=true&w=majority", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
-
 const app = express();
 
 app.use(express.json());
@@ -35,10 +34,6 @@ let auth = require('./auth')(app);
 const passport = require('passport');
 require('./passport');
 
-const {
-  check,
-  validationResult
-} = require('express-validator');
 // CREATE: Handle POST request to add/Create a new user
 
 /* We'll expect JSON in this format
@@ -338,4 +333,4 @@ app.get("/secreturl", (req, res) => {
 const port = process.env.PORT || 8080;
 app.listen(port, '0.0.0.0',() => {
  console.log('Listening on Port ' + port);
-});
+})
