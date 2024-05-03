@@ -1,57 +1,96 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-uuid = require("uuid");
-const morgan = require("morgan");
-const mongoose = require("mongoose");
-const Models = require("./models");
-
-const { check, validationResult } = require('express-validator');
+const express = require('express'),
+  morgan = require('morgan'),
+  fs = require('fs'),
+  path = require('path'),
+  bodyParser = require('body-parser'),
+  uuid = require('uuid'),
+  mongoose = require('mongoose'),
+  Models = require('./models.js');
 
 const Movies = Models.Movie;
 const Users = Models.User;
 
-mongoose.connect("mongodb+srv://laciereddick14:ArkilDE3f8Ozkm3R@cluster0.75vcdly.mongodb.net/?retryWrites=true&w=majority", {
+mongoose.connect(process.env.CONNECTION_URI, {
   useNewUrlParser: true,
-  useUnifiedTopology: true,
+  useUnifiedTopology: true
 });
+
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({
   extended: true
 }));
-// Middleware 
 
-app.use(bodyParser.urlencoded({
-  extended: true
-}));
 app.use(bodyParser.json());
 
 const cors = require('cors');
 app.use(cors());
 
 let auth = require('./auth')(app);
+
 const passport = require('passport');
 require('./passport');
 
-// CREATE: Handle POST request to add/Create a new user
+const {
+  check,
+  validationResult
+} = require('express-validator');
 
-/* We'll expect JSON in this format
-{
-    ID: Integer,
-    Username: String,
-    Password: String,
-    Email: String,
-    Birthday: Date
-} */
-app.post("/users", [
+// create a write stream
+const accessLogStream = fs.createWriteStream(path.join(__dirname, 'log.txt'), {
+  flags: 'a'
+})
+// setup the logger
+app.use(morgan('combined', {
+  stream: accessLogStream
+}));
+
+app.post('/users', async (req, res) => {
+  let hashedPassword = Users.hashPassword(req.body.Password);
+  await Users.findOne({
+      Username: req.body.Username
+    }) // Search to see if a user with the requested username already exists
+    .then((user) => {
+      if (user) {
+        //If the user is found, send a response that it already exists
+        return res.status(400).send(req.body.Username + ' already exists');
+      } else {
+        Users
+          .create({
+            Username: req.body.Username,
+            Password: hashedPassword,
+            Email: req.body.Email,
+            Birthday: req.body.Birthday
+          })
+          .then((user) => {
+            res.status(201).json(user)
+          })
+          .catch((error) => {
+            console.error(error);
+            res.status(500).send('Error: ' + error);
+          });
+      }
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).send('Error: ' + error);
+    });
+});
+
+// Update: a user's info, by username
+
+app.put("/users/:username", [
+  //input validation here
   check('Username', 'Username is required').isLength({
-    min: 7
+    min: 5
   }),
-  check('Username', 'Username contains non alphanumeric characters - not allowed.').isAlphanumeric(),
-  check('Password', 'Password is required').notEmpty(),
+  check('Username', 'Username contains non alphanumeric characters not allowed.').isAlphanumeric(),
+  check('Password', 'Password is required').not().isEmpty(),
   check('Email', 'Email does not appear to be valid').isEmail()
-], async (req, res) => {
+], passport.authenticate('jwt', {
+  session: false
+}), async (req, res) => {
 
   //check validation object for errors
   let errors = validationResult(req);
@@ -60,101 +99,36 @@ app.post("/users", [
       errors: errors.array()
     });
   }
-  let hashPassword = Users.hashPassword(req.body.Password);
-  await Users.findOne({
-      Username: req.body.Username
-    })
-    .then((users) => {
-      if (users) {
-        return res.status(400).send(req.body.Username + "already exists");
-      } else {
-        Users.create({
-            Username: req.body.Username,
-            Password: req.body.Password,
-            Email: req.body.Email,
-            Birthday: req.body.Birthday,
-          })
-          .then((user) => {
-            res.status(201).json(user);
-          })
-          .catch((error) => {
-            console.error(error);
-            res.status(500).send("Error: " + error);
-          });
-      }
-    })
-    .catch((error) => {
-      console.error(error);
-      res.status(500).send("Error: " + error);
-    });
-});
-//UPDATE: Handle PUT request to update user information
-/* We'll expect JSON in this format
-{
-  Username: String,
-  (required)
-  Password: String,
-  (required)
-  Email: String,
-  (required)
-  Birthday: Date,
-  FavoriteMovies: []
-}
-*/
 
-app.put('/users/:Username', [
-    //input validation
-    check('Username', 'Username is required').isLength({
-      min: 7
-    }),
-    check('Username', 'Username contains non alphanumeric characters - not allowed.').isAlphanumeric(),
-    check('Password', 'Password is required').notEmpty(),
-    check('Email', 'Email does not appear to be valid').isEmail()
-  ],
-  passport.authenticate('jwt', {
-    session: false
-  }), async (req, res) => {
-
-    //check validation object for errors
-    let errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(422).json({
-        errors: errors.array()
-      });
-    }
-
-    // condition to check username matches username in request params
-    if (req.user.Username !== req.params.Username) {
-      return res.status(400).send('Permission denied');
-    }
-    // condition ends, find user and update info
-    await Users.findOneAndUpdate({
-        Username: req.params.Username
+  //condition to check that username in request matches username in request params
+  if (req.user.username !== req.params.username) {
+    return res.status(400).send('Permission denied.');
+  }
+  //condition ends, finds user and updates their info
+  await Users.findOneAndUpdate({
+        Username: req.params.username
       }, {
         $set: {
           Username: req.body.Username,
           Password: req.body.Password,
           Email: req.body.Email,
-          Birthday: req.body.Birthday
-        }
+          Birthday: req.body.Birthday,
+        },
       }, {
         new: true
-      }) // This line makes sure that the updated document is returned
-      .then((updatedUser) => {
-        res.json(updatedUser);
-      })
-      .catch((err) => {
-        console.error(err);
-        res.status(500).send(`Error: ` + err);
-      })
-
-  });
-
+      } //this line makes sure the updated document is returned
+    )
+    .then((updatedUser) => {
+      res.json(updatedUser);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error:" + err);
+    });
+});
 // Add a movie to a user's list of favorites
 
-app.post("/users/:Username/movies/:MovieID", passport.authenticate('jwt', {
-  session: false
-}), async (req, res) => {
+app.post("/users/:Username/movies/:MovieID", async (req, res) => {
   await Users.findOneAndUpdate({
       Username: req.params.Username
     }, {
@@ -326,11 +300,11 @@ app.get("/documentation", (req, res) => {
 });
 
 app.get("/secreturl", (req, res) => {
-  res.send("This is a secret URL with super top-secret content.");
+  res.send("secret url");
 });
 
 // Listen for requests
 const port = process.env.PORT || 8080;
 app.listen(port, '0.0.0.0',() => {
  console.log('Listening on Port ' + port);
-})
+});
