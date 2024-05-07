@@ -1,17 +1,18 @@
 const express = require('express'),
-  morgan = require('morgan'),
-  fs = require('fs'),
-  path = require('path'),
-  bodyParser = require('body-parser'),
-  uuid = require('uuid')
- const mongoose = require('mongoose'),
-  Models = require('./models.js');
+morgan = require('morgan'),
+path = require('path'),
+bodyParser = require('body-parser'),
+mongoose = require('mongoose'),
+Models = require('./models.js');
+uuid = require('uuid')
+
 
 const Movies = Models.Movie;
 const Users = Models.User;
 
 mongoose.connect( process.env.CONNECTION_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 const app = express();
+app.use(express.static('public'))
 
 app.use(express.json());
 app.use(express.urlencoded({
