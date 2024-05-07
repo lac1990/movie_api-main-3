@@ -5,7 +5,7 @@ bodyParser = require('body-parser'),
 mongoose = require('mongoose'),
 Models = require('./models.js');
 uuid = require('uuid')
-
+fs = require('fs');
 
 const Movies = Models.Movie;
 const Users = Models.User;
