@@ -39,23 +39,9 @@ const accessLogStream = fs.createWriteStream(path.join(__dirname, 'log.txt'), {f
 // setup the logger
 app.use(morgan('combined', {stream: accessLogStream}));
 
-app.post('/users',
-  // Validation logic here for request
-  [
-    check('Username', 'Username is required').isLength({min: 5}),
-    check('Username', 'Username contains non alphanumeric characters not allowed.').isAlphanumeric(),
-    check('Password', 'Password is required').not().isEmpty(),
-    check('Email', 'Email does not appear to be valid').isEmail()
-  ], async (req, res) => {
-  // check the validation object for errors
-    let errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-      return res.status(422).json({ errors: errors.array() });
-    }
-
-    let hashedPassword = User.hashPassword(req.body.Password);  
-    await User.findOne({ Username: req.body.Username }) // Search to see if a user with the requested username already exists
+app.post('/users', async (req, res) => {
+    let hashedPassword = Users.hashPassword(req.body.Password);  
+    await Users.findOne({ Username: req.body.Username }) // Search to see if a user with the requested username already exists
         .then((user) => {
           if (user) {
             return res.status(400).send(req.body.Username + 'already exists');
