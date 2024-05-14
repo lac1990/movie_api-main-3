@@ -35,17 +35,13 @@ const {
 } = require('express-validator');
 
 // create a write stream
-const accessLogStream = fs.createWriteStream(path.join(__dirname, 'log.txt'), {
-  flags: 'a'
-})
+const accessLogStream = fs.createWriteStream(path.join(__dirname, 'log.txt'), {flags: 'a'})
 // setup the logger
-app.use(morgan('combined', {
-  stream: accessLogStream
-}));
+app.use(morgan('combined', {stream: accessLogStream}));
 
 app.post('/users', async (req, res) => {
-  let hashedPassword = Users.hashPassword(req.body.Password);
-  await Users.findOne({
+  let hashedPassword = User.hashPassword(req.body.Password);
+  await User.findOne({
       Username: req.body.Username
     }) // Search to see if a user with the requested username already exists
     .then((user) => {
