@@ -10,6 +10,7 @@ fs = require('fs');
 const Movies = Models.Movie;
 const Users = Models.User;
 
+//mongodb+srv://laciereddick14:Scarlet-14@cluster0.75vcdly.mongodb.net/moviedb?retryWrites=true&w=majority&appName=Cluster0
 mongoose.connect(process.env.CONNECTION_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -48,17 +49,14 @@ app.use(morgan('combined', {
 
 app.post('/users',
   [
-    check('Username', 'Username is required').isLength({
-      min: 5
-    }),
+    check('Username', 'Username is required').isLength({min: 5}),
     check('Username', 'Username contains non alphanumeric characters - not allowed.').isAlphanumeric(),
     check('Password', 'Password is required').not().isEmpty(),
     check('Email', 'Email does not appear to be valid').isEmail()
-  ], async (req, res) => {
-
+  ],
+   async (req, res) => {
     // check the validation object for errors
     let errors = validationResult(req);
-
     if (!errors.isEmpty()) {
       return res.status(422).json({
         errors: errors.array()
@@ -99,16 +97,14 @@ app.post('/users',
 app.put("/users/:username",
   //input validation here
   [
-    check('Username', 'Username is required').isLength({
-      min: 5
-    }),
+    check('Username', 'Username is required').isLength({min: 5}),
     check('Username', 'Username contains non alphanumeric characters not allowed.').isAlphanumeric(),
     check('Password', 'Password is required').not().isEmpty(),
     check('Email', 'Email does not appear to be valid').isEmail()
   ], passport.authenticate('jwt', {
     session: false
-  }), async (req, res) => {
-
+  }), 
+  async (req, res) => {
     //check validation object for errors
     let errors = validationResult(req);
     if (!errors.isEmpty()) {
