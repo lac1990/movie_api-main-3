@@ -112,7 +112,6 @@ app.put("/users/:username",
         errors: errors.array()
       });
     }
-
     //condition to check that username in request matches username in request params
     if (req.user.username !== req.params.username) {
       return res.status(400).send('Permission denied.');
