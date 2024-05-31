@@ -242,14 +242,14 @@ app.get('/users/:Username', passport.authenticate('jwt', {
 });
 
 //get movies
-app.get('/movies', async (req, res) => {
+app.get("/movie", async (req, res) => {
   await Movies.find()
     .then((movies) => {
       res.status(201).json(movies);
     })
-    .catch((error) => {
-      console.error(error);
-      res.status(500).send('Error: ' + error);
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error: " + err);
     });
 });
 
