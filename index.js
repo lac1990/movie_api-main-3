@@ -254,6 +254,30 @@ app.get("/movies", async (_req, res) => {
     });
 });
 
+//get director
+app.get("/director", async (_req, res) => {
+  await Movies.find()
+    .then((movies) => {
+      res.status(201).json(movies);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error: " + err);
+    });
+});
+
+//get genre
+app.get("/genre", async (_req, res) => {
+  await Movies.find()
+    .then((movies) => {
+      res.status(201).json(movies);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error: " + err);
+    });
+});
+
 // get by title
 
 app.get("/movies/:Title", async (req, res) => {
