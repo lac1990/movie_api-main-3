@@ -95,7 +95,7 @@ app.post('/users',
 
 // Update: a user's info, by username
 
-app.put("/users/:username",
+app.put("/users/:Username",
   //input validation here
   [
     check('Username', 'Username is required').isLength({min: 5}),
@@ -142,7 +142,7 @@ app.put("/users/:username",
 // Add a movie to a user's list of favorites
 
 app.post('/users/:Username/movies/:MovieID', passport.authenticate('jwt', { session: false }), async (req, res) => {
-  await Users.findOneAndUpdate({ username: req.params.username }, {
+  await Users.findOneAndUpdate({ Username: req.params.Username }, {
       $push: { FavoriteMovies: req.params.MovieID }
   },
       { new: true }) // This line makes sure that the updated document is returned
