@@ -16,44 +16,54 @@ mongoose.connect(process.env.CONNECTION_URI, {
   useUnifiedTopology: true
 });
 
-const app = express();
-
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  next();
-});
-
-app.use(express.json());
-app.use(express.urlencoded({
-  extended: true
-}));
-
-
-app.use(bodyParser.json());
-
 const cors = require('cors');
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cors());
+/* app.use(cors()); */
 
+let allowedOrigins = [
+
+  'http://localhost:1234',
+
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        // If a specific origin isn’t found on the list of allowed origins
+        let message =
+          'The CORS policy for this application does not allow access from origin ' +
+          origin;
+        return callback(new Error(message), false);
+      }
+      return callback(null, true);
+    },
+  })
+);
+
+// middleware
+app.use(morgan('common'));
+
+// encode the url
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
 let auth = require('./auth')(app);
 const passport = require('passport');
 require('./passport');
 
-const {
-  check,
-  validationResult
-} = require('express-validator');
+// serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
 
-// create a write stream
-const accessLogStream = fs.createWriteStream(path.join(__dirname, 'log.txt'), {
-  flags: 'a'
-})
-// setup the logger
-app.use(morgan('combined', {
-  stream: accessLogStream
-}));
+// serve the documentation.html file at the '/documentation.html' route
+app.get('/documentation.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'documentation.html'));
+});
+
+// default text when "/"
+app.get('/', (req, res) => {
+  res.send('Welcome to myFlix!');
+});
 
 app.post('/users',
   [
