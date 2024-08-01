@@ -18,6 +18,11 @@ mongoose.connect(process.env.CONNECTION_URI, {
 
 const app = express();
 
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({
   extended: true
@@ -33,7 +38,6 @@ app.use(cors());
 
 
 let auth = require('./auth')(app);
-
 const passport = require('passport');
 require('./passport');
 
