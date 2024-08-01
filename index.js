@@ -37,6 +37,7 @@ const cors = require('cors');
 let allowedOrigins = [
   
   'http://localhost:1234',
+  'https://movie-api-main-3.onrender.com/users/ParisD1990/movies/660344ccbc79f2aa0bb17967',
 
  
 ];
