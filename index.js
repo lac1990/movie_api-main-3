@@ -27,7 +27,10 @@ app.use(express.urlencoded({
 app.use(bodyParser.json());
 
 const cors = require('cors');
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
+
 
 let auth = require('./auth')(app);
 
