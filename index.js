@@ -57,7 +57,13 @@ app.use(
     },
   })
 );
+// encode the url
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
+let auth = require('./auth')(app);
+const passport = require('passport');
+require('./passport');
 
 const {
   check,
