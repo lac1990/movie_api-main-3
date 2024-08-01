@@ -22,6 +22,7 @@ const cors = require('cors');
 let allowedOrigins = [
 
   'http://localhost:1234',
+  'https://movie-api-main-3.onrender.com',
 
 ];
 
