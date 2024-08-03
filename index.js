@@ -34,13 +34,7 @@ app.use(bodyParser.json());
 const cors = require('cors');
 /* app.use(cors()); */
 
-let allowedOrigins = [
-  
-  'http://localhost:1234',
-  'https://movie-api-main-3.onrender.com/users/ParisD1990/movies/660344ccbc79f2aa0bb17967',
-
- 
-];
+Access-Control-Allow-Origin; 'http://localhost:1234'
 
 app.use(
   cors({
@@ -57,13 +51,7 @@ app.use(
     },
   })
 );
-// encode the url
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
 
-let auth = require('./auth')(app);
-const passport = require('passport');
-require('./passport');
 
 const {
   check,
