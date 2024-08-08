@@ -18,6 +18,10 @@ mongoose.connect(process.env.CONNECTION_URI, {
 
 const app = express();
 
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  next();
+});
 
 app.use(express.json());
 app.use(express.urlencoded({
@@ -28,9 +32,7 @@ app.use(express.urlencoded({
 app.use(bodyParser.json());
 
 const cors = require('cors');
-/* app.use(cors()); */
-
-Access-Control-Allow-Origin; 'http://localhost:1234'
+app.use(cors({origin: 'http://localhost:1234'}));
 
 app.use(
   cors({
