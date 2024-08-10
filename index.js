@@ -18,11 +18,6 @@ mongoose.connect(process.env.CONNECTION_URI, {
 
 const app = express();
 
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  next();
-});
-
 app.use(express.json());
 app.use(express.urlencoded({
   extended: true
@@ -32,24 +27,12 @@ app.use(express.urlencoded({
 app.use(bodyParser.json());
 
 const cors = require('cors');
-app.use(cors({origin: 'http://localhost:1234'}));
+app.use(cors());
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
-        // If a specific origin isn’t found on the list of allowed origins
-        let message =
-          'The CORS policy for this application does not allow access from origin ' +
-          origin;
-        return callback(new Error(message), false);
-      }
-      return callback(null, true);
-    },
-  })
-);
+let auth = require('./auth')(app);
 
+const passport = require('passport');
+require('./passport');
 
 const {
   check,
@@ -70,7 +53,7 @@ app.post('/users',
     check('Username', 'Username is required').isLength({min: 5}),
     check('Username', 'Username contains non alphanumeric characters - not allowed.').isAlphanumeric(),
     check('Password', 'Password is required').not().isEmpty(),
-    //check('Email', 'Email does not appear to be valid').isEmail()
+    check('Email', 'Email does not appear to be valid').isEmail()
   ],
    async (req, res) => {
     // check the validation object for errors
@@ -80,7 +63,7 @@ app.post('/users',
         errors: errors.array()
       });
     }
-    //let hashedPassword = Users.hashPassword(req.body.Password);
+    let hashedPassword = Users.hashPassword(req.body.Password);
     await Users.findOne({
         Username: req.body.Username
       }) // Search to see if a user with the requested username already exists
@@ -112,7 +95,7 @@ app.post('/users',
 
 // Update: a user's info, by username
 
-app.put("/users/:Username",
+app.put("/users/:username",
   //input validation here
   [
     check('Username', 'Username is required').isLength({min: 5}),
@@ -158,49 +141,70 @@ app.put("/users/:Username",
   });
 // Add a movie to a user's list of favorites
 
-app.post('/users/:Username/movies/:MovieID', passport.authenticate('jwt', { session: false }), async (req, res) => {
-  await Users.findOneAndUpdate({ Username: req.params.Username }, {
-      $push: { FavoriteMovies: req.params.MovieID }
-  },
-      { new: true }) // This line makes sure that the updated document is returned
+app.post("/users/:Username/movies/:MovieID", async (req, res) => {
+  await Users.findOneAndUpdate({
+      Username: req.params.Username
+    }, {
+      $push: {
+        FavoriteMovies: req.params.MovieID
+      },
+    }, {
+      new: true
+    }) // Ensures updated document is returned
+    .then((updatedUser) => {
+      res.json(updatedUser);
+    })
+    .catch((err) => {
+      console.error(err);
+      res.status(500).send("Error: " + err);
+    });
+});
+
+//delete a movie from favorites
+app.delete("/users/:Username/movies/:MovieID",
+  passport.authenticate("jwt", {
+    session: false
+  }),
+  async (req, res) => {
+    await Users.findOneAndUpdate({
+        UserName: req.params.Username
+      }, {
+        $pull: {
+          FavoriteMovies: req.params.MovieID
+        },
+      }, {
+        new: true
+      })
       .then((updatedUser) => {
-          res.json(updatedUser);
+        res.json(updatedUser);
       })
       .catch((err) => {
-          console.error(err);
-          res.status(500).send('Error: ' + err);
+        console.error(err);
+        res.status(500).send("Error: " + err);
       });
-});
-app.delete('/users/:Username/movies/:MovieID', passport.authenticate('jwt', { session: false }), async (req, res) => {
-    /* The findOne function ensures to return only the object details in the array. If simply 'find' was used, it would return the object in an array, and then the below code to access the object attributes wouldn't have been possible */
-    /* Also we need to add 'await' below, so that this line of code is executed before moving forward(asynchronous function) */
-    let user = await Users.findOne({ username: req.params.username })
-
-    if (user) {
-        user.favorite_movies = user.favorite_movies.filter((movie) => { return movie.title !== req.params.MovieID });
-        res.status(201).send('user ' + req.params.username + ' has removed a movie from favorite list');
-    } else {
-        res.status(404).send('Movie not removed');
-    }
-});
+  }
+);
 
 // Delete a user by username
-app.delete('/users/:Username', passport.authenticate('jwt', { session: false }), async (req, res) => {
-
-    await Users.findOneAndDelete({ username: req.params.username })
-        .then((user) => {
-            if (!user) {
-                res.status(400).send(req.params.username + ' was not found');
-            } else {
-                res.status(200).send(req.params.username + ' was deleted.');
-            }
-        })
-        .catch((err) => {
-            console.error(err);
-            res.status(500).send('Error: ' + err);
-        });
-});
-
+app.delete("/users/:Username", passport.authenticate("jwt", {
+    session: false
+  }),
+  async (req, res) => {
+    Users.findOneAndDelete({
+        Username: req.params.Username
+      })
+      .then((user) => {
+        if (!user) {
+          res.status(400).send(req.params.Username + " was not found");
+        } else {
+          res.status(200).send(req.params.Username + " was deleted.");
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        res.status(500).send('Error: ' + err);
+      });
+  });
 
 //READ
 
@@ -223,9 +227,9 @@ app.get('/users', passport.authenticate('jwt', {
 });
 
 // Get a user by username
-app.get('/users/:Username', /*passport.authenticate('jwt', {
+app.get('/users/:Username', passport.authenticate('jwt', {
   session: false
-}),*/ async (req, res) => {
+}), async (req, res) => {
   await Users.findOne({
       Username: req.params.Username
     })
@@ -240,30 +244,6 @@ app.get('/users/:Username', /*passport.authenticate('jwt', {
 
 //get movies
 app.get("/movies", async (_req, res) => {
-  await Movies.find()
-    .then((movies) => {
-      res.status(201).json(movies);
-    })
-    .catch((err) => {
-      console.error(err);
-      res.status(500).send("Error: " + err);
-    });
-});
-
-//get director
-app.get("/director", async (_req, res) => {
-  await Movies.find()
-    .then((movies) => {
-      res.status(201).json(movies);
-    })
-    .catch((err) => {
-      console.error(err);
-      res.status(500).send("Error: " + err);
-    });
-});
-
-//get genre
-app.get("/genre", async (_req, res) => {
   await Movies.find()
     .then((movies) => {
       res.status(201).json(movies);
