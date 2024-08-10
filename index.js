@@ -18,7 +18,7 @@ mongoose.connect(process.env.CONNECTION_URI, {
 
 const app = express();
 
-app.use((req, res, next) => {
+app.use((_req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   next();
 });
@@ -30,6 +30,11 @@ app.use(express.urlencoded({
 
 
 app.use(bodyParser.json());
+
+
+const passport = require('passport');
+require('./passport');
+
 
 const cors = require('cors');
 app.use(cors({origin: 'http://localhost:1234'}));
@@ -171,14 +176,14 @@ app.post('/users/:Username/movies/:MovieID', passport.authenticate('jwt', { sess
           res.status(500).send('Error: ' + err);
       });
 });
-app.delete('/users/:Username/movies/:movie._id', passport.authenticate('jwt', { session: false }), async (req, res) => {
+app.delete('/users/:Username/movies/:MovieID', passport.authenticate('jwt', { session: false }), async (req, res) => {
     /* The findOne function ensures to return only the object details in the array. If simply 'find' was used, it would return the object in an array, and then the below code to access the object attributes wouldn't have been possible */
     /* Also we need to add 'await' below, so that this line of code is executed before moving forward(asynchronous function) */
-    let user = await Users.findOne({ username: req.params.username })
+    let user = await Users.findOne({ username: req.params.Username })
 
     if (user) {
         user.favorite_movies = user.favorite_movies.filter((movie) => { return movie.title !== req.params.MovieID });
-        res.status(201).send('user ' + req.params.username + ' has removed a movie from favorite list');
+        res.status(201).send('user ' + req.params.Username + ' has removed a movie from favorite list');
     } else {
         res.status(404).send('Movie not removed');
     }
@@ -187,12 +192,12 @@ app.delete('/users/:Username/movies/:movie._id', passport.authenticate('jwt', { 
 // Delete a user by username
 app.delete('/users/:Username', passport.authenticate('jwt', { session: false }), async (req, res) => {
 
-    await Users.findOneAndDelete({ username: req.params.username })
+    await Users.findOneAndDelete({ username: req.params.Username })
         .then((user) => {
             if (!user) {
-                res.status(400).send(req.params.username + ' was not found');
+                res.status(400).send(req.params.Username + ' was not found');
             } else {
-                res.status(200).send(req.params.username + ' was deleted.');
+                res.status(200).send(req.params.Username + ' was deleted.');
             }
         })
         .catch((err) => {
@@ -211,7 +216,7 @@ app.get("/", (req, res) => {
 // Get all users
 app.get('/users', passport.authenticate('jwt', {
   session: false
-}), async (req, res) => {
+}), async (_req, res) => {
   await Users.find()
     .then((users) => {
       res.status(201).json(users);
@@ -318,13 +323,13 @@ app.get("/movies/director/:directorName", async (req, res) => {
     });
 });
 
-app.get("/documentation", (req, res) => {
+app.get("/documentation", (_req, res) => {
   res.sendFile("public/documentation.html", {
     root: __dirname
   });
 });
 
-app.get("/secreturl", (req, res) => {
+app.get("/secreturl", (_req, res) => {
   res.send("secret url");
 });
 
