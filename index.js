@@ -171,7 +171,7 @@ app.post('/users/:Username/movies/:MovieID', passport.authenticate('jwt', { sess
           res.status(500).send('Error: ' + err);
       });
 });
-app.delete('/users/:Username/movies/:MovieID', passport.authenticate('jwt', { session: false }), async (req, res) => {
+app.delete('/users/:Username/movies/:movie._id', passport.authenticate('jwt', { session: false }), async (req, res) => {
     /* The findOne function ensures to return only the object details in the array. If simply 'find' was used, it would return the object in an array, and then the below code to access the object attributes wouldn't have been possible */
     /* Also we need to add 'await' below, so that this line of code is executed before moving forward(asynchronous function) */
     let user = await Users.findOne({ username: req.params.username })
