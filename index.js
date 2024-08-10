@@ -323,13 +323,13 @@ app.get("/movies/director/:directorName", async (req, res) => {
     });
 });
 
-app.get("/documentation", (_req, res) => {
+app.get("/documentation", (req, res) => {
   res.sendFile("public/documentation.html", {
     root: __dirname
   });
 });
 
-app.get("/secreturl", (_req, res) => {
+app.get("/secreturl", (req, res) => {
   res.send("secret url");
 });
 
