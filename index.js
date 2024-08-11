@@ -63,7 +63,7 @@ app.post('/users',
         errors: errors.array()
       });
     }
-    let hashedPassword = Users.hashPassword(req.body.Password);
+    //let hashedPassword = Users.hashPassword(req.body.Password);
     await Users.findOne({
         Username: req.body.Username
       }) // Search to see if a user with the requested username already exists
@@ -186,7 +186,7 @@ app.delete("/users/:Username/movies/:MovieID",
 );
 
 // Delete a user by username
-app.delete("/users/:Username", passport.authenticate("jwt", {
+app.delete("/users/:username", passport.authenticate("jwt", {
     session: false
   }),
   async (req, res) => {
@@ -195,9 +195,9 @@ app.delete("/users/:Username", passport.authenticate("jwt", {
       })
       .then((user) => {
         if (!user) {
-          res.status(400).send(req.params.Username + " was not found");
+          res.status(400).send(req.params.username + " was not found");
         } else {
-          res.status(200).send(req.params.Username + " was deleted.");
+          res.status(200).send(req.params.username + " was deleted.");
         }
       })
       .catch((err) => {
@@ -298,13 +298,13 @@ app.get("/movies/director/:directorName", async (req, res) => {
     });
 });
 
-app.get("/documentation", (req, res) => {
+app.get("/documentation", (_req, res) => {
   res.sendFile("public/documentation.html", {
     root: __dirname
   });
 });
 
-app.get("/secreturl", (req, res) => {
+app.get("/secreturl", (_req, res) => {
   res.send("secret url");
 });
 
