@@ -139,7 +139,7 @@ app.put("/users/:username",
         res.status(500).send("Error:" + err);
       });
   });
-// Add a movie to a user's list of favorites
+// Add and delete a movie to a user's list of favorites
 
 app.post("/users/:Username/movies/:MovieID", async (req, res) => {
   await Users.findOneAndUpdate({
@@ -159,10 +159,9 @@ app.post("/users/:Username/movies/:MovieID", async (req, res) => {
       res.status(500).send("Error: " + err);
     });
 });
-//delete favorite movie
-app.post('/users/:Username/:MovieID', passport.authenticate('jwt', { session: false }), async (req, res) => { // Add a movie to user's favorite movie list
-  await Users.findOneAndUpdate({ Username: req.params.username}, {
-      $push: { FavoriteMovies: req.params.MovieID }},
+app.delete('/users/:username/:MovieID', passport.authenticate('jwt', { session: false }), async  (req, res) => { //
+  await Users.findOneAndUpdate({ Username: req.params.username }, {
+      $pull: { FavoriteMovies: req.params.MovieID}},
       { new: true })
       .then((updatedUser) => {
           res.status(200).json(updatedUser)
