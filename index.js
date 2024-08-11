@@ -159,8 +159,8 @@ app.post("/users/:Username/movies/:MovieID", async (req, res) => {
       res.status(500).send("Error: " + err);
     });
 });
-
-app.post('/users/:username/:MovieID', passport.authenticate('jwt', { session: false }), async (req, res) => { // Add a movie to user's favorite movie list
+//delete favorite movie
+app.post('/users/:Username/:MovieID', passport.authenticate('jwt', { session: false }), async (req, res) => { // Add a movie to user's favorite movie list
   await Users.findOneAndUpdate({ Username: req.params.username}, {
       $push: { FavoriteMovies: req.params.MovieID }},
       { new: true })
