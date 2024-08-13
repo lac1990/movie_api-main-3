@@ -27,17 +27,8 @@ app.use(express.urlencoded({
 app.use(bodyParser.json());
 
 const cors = require('cors');
-app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) { // If a specific origin isn’t found on the list of allowed origins
-      let message = 'The CORS policy for this application doesn’t allow access from origin ' + origin;
-      return callback(new Error(message), false);
-    }
-    return callback(null, true);
-  }
-}));
-let allowedOrigins = ['http://localhost:8080', 'http://testsite.com', 'http://localhost:1234', 'https://my-awesome-site123.netlify.app'];
+app.use(cors());
+
 let auth = require('./auth')(app);
 
 const passport = require('passport');
@@ -104,7 +95,7 @@ app.post('/users',
 
 // Update: a user's info, by username
 
-app.put("/users/:username",
+app.put("/users/:Username",
   //input validation here
   [
     check('Username', 'Username is required').isLength({min: 5}),
