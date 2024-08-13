@@ -37,7 +37,7 @@ app.use(cors({
     return callback(null, true);
   }
 }));
-let allowedOrigins = ['http://localhost:8080', 'http://testsite.com', 'http://localhost:1234', 'https://my-awesome-site123.netlify.app'];
+let allowedOrigins = ['http://localhost:8080', 'http://testsite.com', 'http://localhost:1234', 'https://myflixm0vie.netlify.app'];
 
 let auth = require('./auth')(app);
 
