@@ -27,7 +27,6 @@ app.use(express.urlencoded({
 app.use(bodyParser.json());
 
 const cors = require('cors');
-let allowedOrigins = ['http://localhost:8080', 'http://testsite.com', 'http://localhost:1234', 'https://my-awesome-site123.netlify.app'];
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
@@ -38,6 +37,8 @@ app.use(cors({
     return callback(null, true);
   }
 }));
+let allowedOrigins = ['http://localhost:8080', 'http://testsite.com', 'http://localhost:1234', 'https://my-awesome-site123.netlify.app'];
+
 let auth = require('./auth')(app);
 
 const passport = require('passport');
